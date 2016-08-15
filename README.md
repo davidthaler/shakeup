@@ -8,7 +8,7 @@ This difference is called the 'shakeup' and it gives an indication of the stabil
 in the competition, and whether they have overfitted the public leaderboard. 
 
 ### shakeup.py
-* This code is written for Python 3 *   
+*This code is written for Python 3*   
 This script computes the Kaggle leaderboard shakeup metric as given by BreakfastPirate in a [forum post](
 https://www.kaggle.com/c/liberty-mutual-fire-peril/forums/t/10187/quantifying-leaderboard-shake-up).
 The metric is essentially the mean absolute percentage change in rank for all entrants.
