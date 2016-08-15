@@ -17,7 +17,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup as bs
 
-Result = namedtuple('Result', 'shakeup_all shakeup_top10pct')
+Result = namedtuple('Result', 'shakeup_all shakeup_top10pct spearman_corr')
 
 def get_data(url):
     '''
@@ -57,9 +57,10 @@ def shakeup(url_root):
     all_data = pvt_data.merge(pub_data, on='id', suffixes=('_pvt', '_pub'))
     shake = all_data.place_pvt - all_data.place_pub
     shake_all = shake.abs().mean() / len(shake)
-    cut = math.floor(0.1 * len(shake))
+    cut = int(math.floor(0.1 * len(shake)))
     shake_top = shake[:cut].abs().mean() / len(shake)
-    return Result(shake_all, shake_top)
+    spearman = all_data.place_pvt.corr(all_data.place_pub, method='spearman')
+    return Result(shake_all, shake_top, spearman)
 
 
 def load_all(urls):
@@ -75,7 +76,7 @@ def load_all(urls):
     # TODO: should be a for-loop so that we can handle exceptions per-item
     # TODO: we need the competition names...they are in the url
     return pd.DataFrame([shakeup(url.strip()) for url in urls], 
-                columns=['shakeup_all', 'shakeup_top_10%'])
+                columns=['shakeup_all', 'shakeup_top_10%', 'spearman_corr'])
 
 
 if __name__ == '__main__':
@@ -87,10 +88,13 @@ if __name__ == '__main__':
     arg_group.add_argument('-f', '--file',
             help='A file with a list of Kaggle LB URLs, with one URL per line')
     args = parser.parse_args()
-
-    # TODO: add exception handling
     if args.url is not None:
         print(shakeup(args.url))
     else:
         with open(args.file) as fp:
             print(load_all(fp))
+
+# TODO: return a more helpful error if the content is empty
+
+# TODO: in readme, note python 3
+# TODO: this does **NOT** produce correct output in python2
