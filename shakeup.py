@@ -10,6 +10,7 @@ https://www.kaggle.com/c/challenges-in-representation-learning-the-black-box-lea
 Use that (as a string) as the url_root argument to shakeup(). 
 author: David Thaler
 '''
+import re
 import math
 import argparse
 from collections import namedtuple
@@ -17,7 +18,17 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup as bs
 
+NAME_PATTERN = re.compile(r'c/(.*)/leaderboard')
+
 Result = namedtuple('Result', 'competition_name shakeup_all shakeup_top10pct spearman_corr')
+
+class LBParseError(Exception):
+    '''Class indicates that no Kaggle Leaderboard was found at given URL'''
+    pass
+
+class LBNameError(Exception):
+    '''Class indicates that given URL does not have correct format'''
+    pass
 
 def get_data(url):
     '''
@@ -29,11 +40,14 @@ def get_data(url):
     Returns:
       a Pandas data frame with the places, team ids and team names taken from the LB.
     '''
-    raw_html = requests.get(url)
-    parsed_html = bs(raw_html.content)
+    response = requests.get(url)
+    response.raise_for_status()
+    parsed_html = bs(response.content)
     data = [(int(tag.select('td.leader-number')[0].text), 
              tag.attrs['id']) 
              for tag in parsed_html.find_all('tr', id=True)]
+    if len(data) == 0:
+        raise LBParseError('Cannot find Kaggle LB at URL: %s' % url)
     out = pd.DataFrame(data, columns=['place', 'id'])
     return out
 
@@ -73,8 +87,11 @@ def get_name(url):
     Returns:
       the url part after /c/ and before /leaderboard
     '''
-    parts = url.split('/')
-    return parts[parts.index('c') + 1]
+    names = re.findall(NAME_PATTERN, url)
+    if len(names) == 0:
+        raise LBNameError('Cannot extract name from URL: %s' % url)
+    else:
+        return names[0]
 
 def load_all(urls):
     '''
@@ -86,11 +103,18 @@ def load_all(urls):
     Returns:
       a Pandas data frame with the competition name and LB shakeup
     '''
-    # TODO: should be a for-loop so that we can handle exceptions per-item
-    # TODO: we need the competition names...they are in the url
-    return pd.DataFrame([shakeup(url.strip()) for url in urls], 
-                columns=['competition_name', 'shakeup_all', 'shakeup_top_10%', 'spearman_corr'])
-
+    results = []
+    for url in urls:
+        name = get_name(url)
+        print('Loading %s' % name)
+        try:
+            results.append(shakeup(url.strip()))
+        except LBParseError:
+            print('Skipping %s. Cannot parse Kaggle LB at URL: %s' % (name, url))
+        except requests.HTTPError:
+            print('Skipping %s. Cannot load resource at URL: %s' % (name, url))
+    return pd.DataFrame(results, columns=['competition_name', 
+                'shakeup_all', 'shakeup_top_10%', 'spearman_corr'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -106,9 +130,6 @@ if __name__ == '__main__':
     else:
         with open(args.file) as fp:
             print(load_all(fp))
-
-# TODO: return a more helpful error if the content is empty or a 404
-# TODO: return the competition name
 
 # TODO: in readme, note python 3
 # TODO: this does **NOT** produce correct output in python2
