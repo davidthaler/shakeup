@@ -62,6 +62,18 @@ def shakeup(url_root):
     spearman = all_data.place_pvt.corr(all_data.place_pub, method='spearman')
     return Result(shake_all, shake_top, spearman)
 
+def get_name(url):
+    '''
+    Gets the competition name from a full url.
+
+    Params:
+      url: a full url or base url
+    
+    Returns:
+      the url part after /c/ and before /leaderboard
+    '''
+    parts = url.split('/')
+    return parts[parts.index('c') + 1]
 
 def load_all(urls):
     '''
@@ -94,7 +106,7 @@ if __name__ == '__main__':
         with open(args.file) as fp:
             print(load_all(fp))
 
-# TODO: return a more helpful error if the content is empty
+# TODO: return a more helpful error if the content is empty or a 404
 
 # TODO: in readme, note python 3
 # TODO: this does **NOT** produce correct output in python2
