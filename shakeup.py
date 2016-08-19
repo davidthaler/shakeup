@@ -134,7 +134,9 @@ if __name__ == '__main__':
             help='A file with a list of Kaggle LB URLs, with one URL per line')
     args = parser.parse_args()
     if args.url is not None:
-        print(shakeup(args.url))
+        out = shakeup(args.url)
+        print(pd.DataFrame([out], 
+            columns=['comp name', 'shakeup', 'top 10% shakeup', 'Spearman corr']))
     else:
         with open(args.file) as fp:
             print(load_all(fp))
