@@ -10,6 +10,7 @@ https://www.kaggle.com/c/challenges-in-representation-learning-the-black-box-lea
 Use that (as a string) as the url_root argument to shakeup(). 
 author: David Thaler
 '''
+import sys
 import re
 import math
 import argparse
@@ -42,7 +43,14 @@ def get_data(url):
     '''
     response = requests.get(url)
     response.raise_for_status()
-    parsed_html = bs(response.content)
+    # In Python 2, BeautifulSoup needs html5lib to parse long LBs correctly
+    if sys.version_info.major == 2:
+        try:
+            parsed_html = bs(response.content, 'html5lib')
+        except ImportError:
+            raise ImportError('In Py2.7, html5lib is needed. See readme/module doc.')
+    else:
+        parsed_html = bs(response.content)
     data = [(int(tag.select('td.leader-number')[0].text), 
              tag.attrs['id']) 
              for tag in parsed_html.find_all('tr', id=True)]
@@ -130,6 +138,3 @@ if __name__ == '__main__':
     else:
         with open(args.file) as fp:
             print(load_all(fp))
-
-# TODO: in readme, note python 3
-# TODO: this does **NOT** produce correct output in python2
