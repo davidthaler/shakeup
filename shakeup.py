@@ -126,7 +126,8 @@ def load_all(urls):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Generates the shakeup metric for Kaggle leaderboards.')
+        description='Generates the shakeup metric for Kaggle leaderboards.', 
+        epilog='NOTE: Due to a parsing problem in BeautifulSoup under Python 2.x, you will need html5lib if you are using Python 2.x.')
     arg_group = parser.add_mutually_exclusive_group(required=True)
     arg_group.add_argument('-u', '--url', 
             help='URL for a Kaggle LB, w/o the final /public or /private')
